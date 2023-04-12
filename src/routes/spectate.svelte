@@ -1,6 +1,5 @@
 <script lang="ts">
 	import { onMount, beforeUpdate, afterUpdate } from 'svelte';
-	import { link } from 'svelte-routing';
 	import { Game } from '../number-guessing/game';
 	import config from '../config';
 	import { handleScope } from '../scoping';
@@ -8,12 +7,6 @@
 	import TableRow from '../components/generic/table-row.svelte';
 	import TableEmpty from '../components/generic/table-empty.svelte';
 	import TableCell from '../components/generic/table-cell.svelte';
-	import { addError } from '../stores';
-
-	let scope: string;
-	let gameId: string;
-	let playerId: string;
-	let playerSecret: string;
 
 	let min = 0;
 	let lowerBound = 0;
@@ -36,7 +29,7 @@
 	const resetGuesses = () => {
 		guesses = [];
 		guessesHitMax = false;
-	}
+	};
 	let guessList: HTMLDivElement;
 	let autoscroll = true;
 	let avgGuesses = 0;
@@ -61,7 +54,7 @@
 
 	onMount(async () => {
 		let game: Game;
-		({ scope, gameId, playerId, playerSecret } = await handleScope(
+		await handleScope(
 			window.location.search,
 			null,
 			async (gameId) =>
@@ -72,9 +65,8 @@
 					gameId,
 					playerId,
 					playerSecret
-				)),
-			addError
-		));
+				))
+		);
 		registerListeners(game);
 	});
 
@@ -136,23 +128,10 @@
 	afterUpdate(() => {
 		if (autoscroll) guessList.scrollTo(guessList.scrollWidth, 0);
 	});
+
+	let mobileMode: boolean;
 </script>
 
-{#if scope === 'game' || scope === 'player'}
-	<div>
-		<p>
-			The scope is set to "{scope}". Click
-			<a
-				href={`/debug?game_id=${gameId}` +
-					(scope === 'player'
-						? `&player_id=${playerId}&player_secret=${playerSecret}`
-						: '')}
-				use:link>here</a
-			>
-			to go to the {scope} debug console.
-		</p>
-	</div>
-{/if}
 <section id="view">
 	<div id="display">
 		<div id="min">
@@ -241,27 +220,25 @@
 	</div>
 </section>
 <section id="results">
-	<Table minWidthPx={300}>
+	<Table mobileModeWidthPx={700} bind:mobileMode>
 		<div slot="head">
-			<TableRow {columnWidths}>
+			<TableRow {columnWidths} mobileMode={false}>
 				<TableCell>Game</TableCell>
 				<TableCell>Target</TableCell>
 				<TableCell>Guesses (Avg. {avgGuesses})</TableCell>
 			</TableRow>
 		</div>
-		<div slot="body" id="results-rows">
-			{#if games.length > 0}
-				{#each games as { guesses, target }, index (index)}
-					<TableRow {columnWidths}>
-						<TableCell>#{totalGames - games.length + index + 1}</TableCell>
-						<TableCell>{target ?? '?'}</TableCell>
-						<TableCell>{guesses}</TableCell>
-					</TableRow>
-				{/each}
-			{:else}
-				<TableEmpty>No games have been finished yet.</TableEmpty>
-			{/if}
-		</div>
+		{#if games.length > 0}
+			{#each games as { guesses, target }, index (index)}
+				<TableRow {columnWidths} {mobileMode}>
+					<TableCell>#{totalGames - games.length + index + 1}</TableCell>
+					<TableCell>{target ?? '?'}</TableCell>
+					<TableCell>{guesses}</TableCell>
+				</TableRow>
+			{/each}
+		{:else}
+			<TableEmpty>No games have been finished yet.</TableEmpty>
+		{/if}
 	</Table>
 </section>
 
@@ -271,6 +248,7 @@
 		border-radius: var(--radius);
 		overflow: hidden;
 		padding: var(--padding);
+		margin-bottom: var(--padding);
 		> div {
 			display: flex;
 			justify-content: center;
@@ -304,12 +282,6 @@
 			> div#guess-list::-webkit-scrollbar {
 				display: none; /* Chrome, Safari, Opera */
 			}
-		}
-	}
-	section#results {
-		div#results-rows {
-			display: flex;
-			flex-direction: column-reverse;
 		}
 	}
 </style>
