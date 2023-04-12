@@ -1,19 +1,8 @@
 # game-frontend-number-guessing
 
+![thumbail](./public/logo)
+
 Number-Guessing's frontend based on game-frontend-template-svelte.
-
-## Developing
-
-Once you've installed dependencies with `npm install`, start a development server:
-
-```bash
-npm run dev
-
-# or start the server and open the app in a new browser tab
-npm run dev -- --open
-```
-
-After that you can start customizing the game view in [`src/routes/spectate.svelte`](./src/routes/spectate.svelte). Also don't forget to update the [`src/config.ts`](./src/config.ts) and the info in [`public/security.txt`](./static/security.txt) or delete it if you don't want to use it.
 
 ## Building
 
