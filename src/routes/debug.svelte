@@ -1,15 +1,15 @@
 <script lang="ts">
-	import { onMount } from 'svelte';
+	import { onMount, beforeUpdate, afterUpdate } from 'svelte';
 	import {
 		createDebugSocket,
 		Severity,
 		Verbosity,
 	} from '@code-game-project/client/dist/browser';
 	import config from '../config';
-	import { addError } from '../stores';
 	import { handleScope } from '../scoping';
 	import Fullscreen from '../components/generic/fullscreen.svelte';
 	import DebugLog from '../components/debug-log.svelte';
+	import ButtonIcon from '../components/generic/button-icon.svelte';
 
 	let present: { [K in Severity]: boolean } = {
 		error: false,
@@ -96,56 +96,85 @@
 			async () => await setupDebugSocket().debugServer(),
 			async (gameId) => await setupDebugSocket().debugGame(gameId),
 			async (gameId, playerId, playerSecret) =>
-				await setupDebugSocket().debugPlayer(gameId, playerId, playerSecret),
-			addError
+				await setupDebugSocket().debugPlayer(gameId, playerId, playerSecret)
 		);
 	});
+
+	let contentDiv: HTMLDivElement;
+	let autoscroll: boolean = false;
+	beforeUpdate(() => {
+		autoscroll =
+			contentDiv &&
+			contentDiv.offsetHeight + contentDiv.scrollTop >
+				contentDiv.scrollHeight - 20;
+	});
+	afterUpdate(() => {
+		if (autoscroll) scrollToBottom();
+	});
+	const scrollToBottom = () => contentDiv.scrollTo(0, contentDiv.scrollHeight);
 </script>
 
 <section id="logs">
-	<Fullscreen maxHeightPx={700}>
+	<Fullscreen height={700} on:fullscreenChange={scrollToBottom}>
 		<div id="header" slot="header">
 			<h3>Debug Console</h3>
 			<div id="filters">
 				<div>
-					<input type="checkbox" bind:checked={filter['error']} />
-					<img
-						src="/icons/error.svg"
-						alt="Error"
-						title="Add errors to filter."
-						on:click={() => (filter['error'] = !filter['error'])}
-					/>
+					<input type="checkbox" bind:checked={filter[Severity.ERROR]} />
+					<ButtonIcon
+						title="{filter[Severity.ERROR] ? 'Remove' : 'Add'} errors {filter[
+							Severity.ERROR
+						]
+							? 'from'
+							: 'to'} filter."
+						on:click={() => (filter[Severity.ERROR] = !filter[Severity.ERROR])}
+					>
+						<img src="/icons/error.svg" alt="Error" />
+					</ButtonIcon>
 				</div>
 				<div>
-					<input type="checkbox" bind:checked={filter['warning']} />
-					<img
-						src="/icons/warning.svg"
-						alt="warning"
-						title="Add warnings to filter."
-						on:click={() => (filter['warning'] = !filter['warning'])}
-					/>
+					<input type="checkbox" bind:checked={filter[Severity.WARNING]} />
+					<ButtonIcon
+						title="{filter[Severity.WARNING]
+							? 'Remove'
+							: 'Add'} warnings {filter[Severity.WARNING]
+							? 'from'
+							: 'to'} filter."
+						on:click={() =>
+							(filter[Severity.WARNING] = !filter[Severity.WARNING])}
+					>
+						<img src="/icons/warning.svg" alt="warning" />
+					</ButtonIcon>
 				</div>
 				<div>
-					<input type="checkbox" bind:checked={filter['info']} />
-					<img
-						src="/icons/info.svg"
-						alt="info"
-						title="Add infos to filter."
-						on:click={() => (filter['info'] = !filter['info'])}
-					/>
+					<input type="checkbox" bind:checked={filter[Severity.INFO]} />
+					<ButtonIcon
+						title="{filter[Severity.INFO] ? 'Remove' : 'Add'} infos {filter[
+							Severity.INFO
+						]
+							? 'from'
+							: 'to'} filter."
+						on:click={() => (filter[Severity.INFO] = !filter[Severity.INFO])}
+					>
+						<img src="/icons/info.svg" alt="info" />
+					</ButtonIcon>
 				</div>
 				<div>
-					<input type="checkbox" bind:checked={filter['trace']} />
-					<img
-						src="/icons/trace.svg"
-						alt="trace"
-						title="Add traces to filter."
-						on:click={() => (filter['trace'] = !filter['trace'])}
-					/>
+					<input type="checkbox" bind:checked={filter[Severity.TRACE]} />
+					<ButtonIcon
+						title="{filter[Severity.TRACE] ? 'Remove' : 'Add'} traces {filter[
+							Severity.TRACE
+						]
+							? 'from'
+							: 'to'} filter."
+						on:click={() => (filter[Severity.TRACE] = !filter[Severity.TRACE])}
+					>
+						<img src="/icons/trace.svg" alt="trace" />
+					</ButtonIcon>
 				</div>
 			</div>
 		</div>
-		<div id="content" slot="content">
+		<div id="content" slot="content" bind:this={contentDiv}>
 			{#if logs.length === 0}
 				<p>No debug logs have arrived here yet.</p>
 			{:else if allHidden}
@@ -184,22 +213,18 @@
 				display: flex;
 				align-items: center;
 				img {
-					margin-left: calc(var(--padding) / 2);
+					margin-left: var(--half-padding);
 				}
 			}
 		}
 	}
 
 	div#content {
-		overflow-y: auto;
-		overscroll-behavior-y: contain;
-		scroll-snap-type: y mandatory;
+		overflow-y: scroll;
+		height: 100%;
 		> p {
 			padding: var(--padding);
 			text-align: center;
-		}
-		> div:last-child {
-			scroll-snap-align: start;
 		}
 	}
 </style>
